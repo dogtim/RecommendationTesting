@@ -14,22 +14,21 @@
 
 package com.dogtim.recommendation;
 
-import java.net.URI;
-import java.util.Collections;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.TaskStackBuilder;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v17.leanback.app.BackgroundManager;
 import android.support.v17.leanback.app.BrowseFragment;
 import android.support.v17.leanback.widget.ArrayObjectAdapter;
 import android.support.v17.leanback.widget.HeaderItem;
-import android.support.v17.leanback.widget.ImageCardView;
 import android.support.v17.leanback.widget.ListRow;
 import android.support.v17.leanback.widget.ListRowPresenter;
 import android.support.v17.leanback.widget.OnItemViewClickedListener;
@@ -37,7 +36,7 @@ import android.support.v17.leanback.widget.OnItemViewSelectedListener;
 import android.support.v17.leanback.widget.Presenter;
 import android.support.v17.leanback.widget.Row;
 import android.support.v17.leanback.widget.RowPresenter;
-import android.support.v4.app.ActivityOptionsCompat;
+import android.support.v4.app.NotificationCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -48,6 +47,12 @@ import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
+
+import java.net.URI;
+import java.util.Collections;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainFragment extends BrowseFragment {
 	private static final String TAG = "MainFragment";
@@ -169,7 +174,7 @@ public class MainFragment extends BrowseFragment {
 		                          RowPresenter.ViewHolder rowViewHolder, Row row) {
 
 			if (item instanceof Movie) {
-				Movie movie = (Movie) item;
+				/*Movie movie = (Movie) item;
 				Log.d(TAG, "Item: " + item.toString());
 				Intent intent = new Intent(getActivity(), DetailsActivity.class);
 				intent.putExtra(DetailsActivity.MOVIE, movie);
@@ -178,7 +183,9 @@ public class MainFragment extends BrowseFragment {
 						getActivity(),
 						((ImageCardView) itemViewHolder.view).getMainImageView(),
 						DetailsActivity.SHARED_ELEMENT_NAME).toBundle();
-				getActivity().startActivity(intent, bundle);
+				getActivity().startActivity(intent, bundle);*/
+				//createRecommendation();
+				openPlayStore();
 			} else if (item instanceof String) {
 				if (((String) item).indexOf(getString(R.string.error_fragment)) >= 0) {
 					Intent intent = new Intent(getActivity(), BrowseErrorActivity.class);
@@ -190,7 +197,57 @@ public class MainFragment extends BrowseFragment {
 			}
 		}
 	}
+	private void openPlayStore() {
+		Intent launchIntent = getActivity().getPackageManager().getLaunchIntentForPackage("com.android.vending");
+		launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+		startActivity(launchIntent);
+	}
 
+	private void openAppDownloadPage() {
+		final String appPackageName = "com.example.haha";
+		try {
+			startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + appPackageName)));
+		} catch (android.content.ActivityNotFoundException anfe) {
+			startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + appPackageName)));
+		}
+	}
+	private void createRecommendation() {
+
+		NotificationManager mNotificationManager = (NotificationManager) getActivity().getSystemService(Context.NOTIFICATION_SERVICE);
+		Notification notification = buildNotification();
+		mNotificationManager.notify(1, notification);
+	}
+
+	private Notification buildNotification() {
+		PendingIntent intent = buildPendingIntent();
+		Bundle extras = new Bundle();
+		extras.putString("haha", "1234");
+		Notification notification = new NotificationCompat.BigPictureStyle(
+				new NotificationCompat.Builder(getActivity())
+						.setAutoCancel(true)
+						.setContentTitle("Title")
+						.setContentText("Description")
+						.setLocalOnly(true)
+						.setOngoing(true)
+						.setColor(getResources().getColor(R.color.fastlane_background))
+						.setCategory(Notification.CATEGORY_RECOMMENDATION)
+						.setContentIntent(intent)
+						.setExtras(extras))
+				.build();
+
+		Log.d(TAG, "Building notification - " + this.toString());
+
+		return notification;
+
+	}
+	private PendingIntent buildPendingIntent() {
+		Intent detailsIntent = new Intent();
+
+		TaskStackBuilder stackBuilder = TaskStackBuilder.create(getActivity());
+		stackBuilder.addNextIntent(detailsIntent);
+
+		return stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+	}
 	private final class ItemViewSelectedListener implements OnItemViewSelectedListener {
 		@Override
 		public void onItemSelected(Presenter.ViewHolder itemViewHolder, Object item,
